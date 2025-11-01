@@ -1,0 +1,151 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 20px;
+    background-color: #f8f8f8;
+  }
+  
+  .month-container {
+    margin-bottom: 30px;
+    page-break-after: always;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: white;
+  }
+  
+  h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 15px;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 1px;
+    margin: 10px 0;
+    table-layout: fixed;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  th,
+  td {
+    border: 1px solid #ddd;
+    text-align: center;
+    padding: 10px;
+    width: 14.28%;
+    height: 120px;
+    vertical-align: top;
+    position: relative;
+    background-color: #fff;
+  }
+  
+  th {
+    background-color: #eee;
+    padding: 10px;
+    height: 40px;
+    font-weight: bold;
+    color: #555;
+  }
+  
+  tbody tr {
+    height: 120px;
+  }
+  
+  tbody tr:nth-child(n + 7) {
+    display: none;
+  }
+  
+  .events {
+    font-size: 0.8em;
+    color: #555;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 5px;
+    background-color: #f9f9f9;
+    width: calc(100% - 10px);
+    box-sizing: border-box;
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    z-index: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    /* --- ADDED/MODIFIED --- */
+    min-height: 2em; /* Adjust as needed, enough for at least one line of text */
+  }
+  
+  /* Style for individual event names within the events container */
+  .events .event-name {
+      font-weight: bold;
+      margin-bottom: 3px;
+  }
+  
+  .empty-cell {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+  }
+  
+  /* --- Styles for specific elements within each day cell --- */
+  
+  .day-number {
+    font-size: 1.2em;
+    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #333;
+    z-index: 2;
+  }
+  
+  .solar-noon {
+    font-size: 0.8em;
+    position: absolute;
+    top: 38px; /* --- MODIFIED --- */
+    left: 10px;
+    color: #666;
+}
+  
+.gregorian-date {
+    font-size: 0.8em;
+    position: absolute;
+    top: 38px;       /* --- MODIFIED --- */
+    right: 10px;     /* --- MODIFIED --- */
+    color: #555;
+  }
+  
+  .solar-degree {
+    position: absolute;
+    bottom: 5px;
+    left: 57%;          /* --- MODIFIED --- */
+    transform: translateX(-50%);
+    font-size: 0.8em;
+    font-weight: bold; /* --- ADDED --- */
+    color: #666;
+}
+  
+  .moon-phase {
+    position: absolute;
+    bottom: 5px; /* Position at the bottom */
+    left: 5px;   /* Position at the left */
+    font-size: 0.8em;
+    color: #666;
+  }
+  
+  .delta {
+    position: absolute;
+    bottom: 5px; /* Position at the bottom */
+    right: 5px;  /* Position at the right */
+    font-size: 0.8em;
+    opacity: 0.7;
+  }
+    /* --- Colors for delta values --- */
+  .green {
+      color: green;
+  }
+  .red {
+      color: red;
+  }

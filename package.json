@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "astronomy-engine": "^2.1.19",
+    "moment": "^2.30.1",
+    "moment-timezone": "^0.5.46",
+    "sweph": "^2.10.3-4"
+  }
+}

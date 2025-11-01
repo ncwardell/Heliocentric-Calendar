@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Printable Calendar</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .day-emoji {
+      filter: grayscale(75%);
+      opacity: 0.4;
+    }
+    .noon-zodiac {
+      font-size: 0.8em;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="calendar-container"></div>
+  <script type="module">
+    import { generateCalendar } from './dist/CalendarGenerator.js';
+
+    const calendar = generateCalendar();
+
+    function generateHTMLCalendar(calendar) {
+      const container = document.getElementById('calendar-container');
+
+      const zodiacEmojis = {
+        'Aries': '♈',
+        'Taurus': '♉',
+        'Gemini': '♊',
+        'Cancer': '♋',
+        'Leo': '♌',
+        'Virgo': '♍',
+        'Libra': '♎',
+        'Scorpio': '♏',
+        'Sagittarius': '♐',
+        'Capricorn': '♑',
+        'Aquarius': '♒',
+        'Pisces': '♓'
+      };
+
+      const weekDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const weekPlanets = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'];
+      const weekEmojis = ['♌', '♋', '♈', '♊', '♐', '♉', '♑'];
+      const noonEmojis = ['Jupiter', 'Venus', 'Saturn', 'Sun', 'Moon', 'Mars', 'Mercury'];
+      //const noonEmojis = ['♐', '♉', '♑', '♌', '♋', '♈', '♊']; // Sunday to Saturday
+
+      calendar.forEach(month => {
+        const monthContainer = document.createElement('div');
+        monthContainer.classList.add('month-container');
+
+        const title = document.createElement('h2');
+        const monthEmoji = zodiacEmojis[month.Name] || '';
+        title.textContent = `${monthEmoji} ${month.Name}`;
+        monthContainer.appendChild(title);
+
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+
+        weekDayNames.forEach((weekday, index) => {
+          const th = document.createElement('th');
+          const emoji = weekEmojis[index];
+          const planet = weekPlanets[index];
+          th.innerHTML = `
+            <div class="day-emoji">${emoji}</div>
+            <b>${planet}</b><br>
+            <small>(${weekday})</small>
+          `;
+          headerRow.appendChild(th);
+        });
+
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        let currentWeek = [];
+        let startDay = new Date(month.Days[0].Date).getDay();
+
+        for (let i = 0; i < startDay; i++) {
+          const emptyCell = document.createElement('td');
+          emptyCell.classList.add('empty-cell');
+          currentWeek.push(emptyCell);
+        }
+
+        month.Days.forEach(day => {
+          const dayCell = document.createElement('td');
+
+          // Determine delta color based on sign
+          let deltaColor = '';
+          if (day.Delta.startsWith('+')) {
+            deltaColor = 'green';
+          } else if (day.Delta.startsWith('-')) {
+            deltaColor = 'red';
+          }
+
+          const formattedDate = day.Date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+            ((d => (d >= 11 && d <= 13) ? 'th' : ['th', 'st', 'nd', 'rd'][d % 10] || 'th')(day.Date.getDate()));
+
+          const noonEmoji = noonEmojis[day.Date.getDay()] || '';
+
+          // --- IMPROVED: Use a template literal with dedicated classes ---
+          dayCell.innerHTML = `
+            <div class="day-number">${day.Number}</div>
+            <div class="gregorian-date">${formattedDate}</div>
+            <div class="solar-degree">${day.SolarDegree}&deg;</div>
+            <div class="solar-noon">${day.SolarNoon}&deg;</div>
+            <div class="noon-zodiac">${noonEmoji}</div>
+            <div class="moon-phase">${day.MoonPhase}</div>
+            <div class="delta ${deltaColor}">${day.Delta}</div>
+            ${day.Events.length > 0 ? `<div class="events">${day.Events.map(event => `<div class="event-name">${event.name}</div>`).join('')}</div>` : `<div class="events">&nbsp;</div>`}
+          `; //Events no longer use a <br>
+
+          currentWeek.push(dayCell);
+
+          if (currentWeek.length === 7) {
+            const weekRow = document.createElement('tr');
+            currentWeek.forEach(cell => weekRow.appendChild(cell));
+            tbody.appendChild(weekRow);
+            currentWeek = [];
+          }
+        });
+
+        while (currentWeek.length < 7) {
+          const emptyCell = document.createElement('td');
+          emptyCell.classList.add('empty-cell');
+          currentWeek.push(emptyCell);
+        }
+
+        if (currentWeek.length > 0) {
+          const weekRow = document.createElement('tr');
+          currentWeek.forEach(cell => weekRow.appendChild(cell));
+          tbody.appendChild(weekRow);
+        }
+
+        while (tbody.rows.length < 6) {
+          const emptyRow = document.createElement('tr');
+          for (let i = 0; i < 7; i++) {
+            const emptyCell = document.createElement('td');
+            emptyCell.classList.add('empty-cell');
+            emptyRow.appendChild(emptyCell);
+          }
+          tbody.appendChild(emptyRow);
+        }
+
+        table.appendChild(tbody);
+        monthContainer.appendChild(table);
+        container.appendChild(monthContainer);
+      });
+    }
+
+    generateHTMLCalendar(calendar);
+  </script>
+</body>
+
+</html>
