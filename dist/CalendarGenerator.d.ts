@@ -35,8 +35,12 @@ interface Day {
     MoonPhase: string;
     /** Difference from 24-hour day in seconds (+ or -) */
     Delta: string;
-    /** Earth's heliocentric longitude relative to Spring Equinox (0-360°) */
+    /** Earth's heliocentric longitude at solar noon relative to Spring Equinox (0-360°) */
     SolarDegree: number;
+    /** Earth's heliocentric longitude at solar day start relative to Spring Equinox (0-360°) */
+    SolarStartLongitude: number;
+    /** Earth's heliocentric longitude at solar day end relative to Spring Equinox (0-360°) */
+    SolarEndLongitude: number;
     /** Astronomical events occurring on this day */
     Events: {
         name: string;
