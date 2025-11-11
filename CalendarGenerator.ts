@@ -265,6 +265,9 @@ function generateCalendarYear(eventList: Events): void {
         // Variable to store the birth moment if found during this day's binary search
         let birthMomentCurrentIteration: moment.Moment | null = null;
 
+        // Flag to track if we found the birthday within THIS solar day's boundaries
+        let foundBirthdayThisDay = false;
+
         /**
          * CRITICAL: Check if the birth degree falls within this solar day's degree range
          *
@@ -375,6 +378,7 @@ function generateCalendarYear(eventList: Events): void {
                  * If found multiple times due to boundary rounding, we take the latest finding.
                  */
                 finalFoundBirthMoment = birthMomentCurrentIteration;
+                foundBirthdayThisDay = true;  // Mark that THIS solar day contains the birthday
                 console.log(`  >> Birthday found on currentDate: ${currentDate.utc().format('YYYY-MM-DD HH:mm:ss')}`);
             }
         }
@@ -392,14 +396,17 @@ function generateCalendarYear(eventList: Events): void {
          * Determine which events occur on this day
          *
          * Priority is given to the orbital birthday. If the orbital birthday
-         * falls on this day, it's the only event shown. Otherwise, we check
-         * for equinoxes, solstices, aphelion, and perihelion.
+         * falls within this solar day's boundaries (SolarStart to SolarEnd),
+         * it's the only event shown. Otherwise, we check for equinoxes,
+         * solstices, aphelion, and perihelion.
          */
-        if (finalFoundBirthMoment.utc().format('YYYY-MM-DD') === currentDate.utc().format('YYYY-MM-DD')) {
-            // This is the orbital birthday - the day Earth returns to birth position
+        if (foundBirthdayThisDay) {
+            // This is the orbital birthday - the day whose solar boundaries contain the birth moment
             console.log(`\n✓ BIRTHDAY ASSIGNED TO CALENDAR DAY:`);
             console.log(`  currentDate (UTC): ${currentDate.utc().format('YYYY-MM-DD HH:mm:ss')}`);
             console.log(`  finalFoundBirthMoment (UTC): ${finalFoundBirthMoment.utc().format('YYYY-MM-DD HH:mm:ss')}`);
+            console.log(`  Solar Day Start: ${dayInfo.SolarStart.format('YYYY-MM-DD HH:mm:ss')}`);
+            console.log(`  Solar Day End: ${dayInfo.SolarEnd.format('YYYY-MM-DD HH:mm:ss')}`);
             console.log(`  Month Index: ${monthIndex} (${Months[monthIndex + 1]})`);
             console.log(`  Day Number in Month: ${newCalendar[monthIndex].Days.length + 1}`);
             events = [{ name: 'BirthOrbit', description: 'Birthday', date: finalFoundBirthMoment.utc().format('YYYY-MM-DD HH:mm:ss') }];
