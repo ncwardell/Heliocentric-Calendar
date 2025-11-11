@@ -369,6 +369,7 @@ function generateCalendarYear(eventList: Events): void {
                  * If found multiple times due to boundary rounding, we take the latest finding.
                  */
                 finalFoundBirthMoment = birthMomentCurrentIteration;
+                console.log(`  >> Birthday found on currentDate: ${currentDate.utc().format('YYYY-MM-DD HH:mm:ss')}`);
             }
         }
 
@@ -390,6 +391,11 @@ function generateCalendarYear(eventList: Events): void {
          */
         if (finalFoundBirthMoment.utc().format('YYYY-MM-DD') === currentDate.utc().format('YYYY-MM-DD')) {
             // This is the orbital birthday - the day Earth returns to birth position
+            console.log(`\n✓ BIRTHDAY ASSIGNED TO CALENDAR DAY:`);
+            console.log(`  currentDate (UTC): ${currentDate.utc().format('YYYY-MM-DD HH:mm:ss')}`);
+            console.log(`  finalFoundBirthMoment (UTC): ${finalFoundBirthMoment.utc().format('YYYY-MM-DD HH:mm:ss')}`);
+            console.log(`  Month Index: ${monthIndex} (${Months[monthIndex + 1]})`);
+            console.log(`  Day Number in Month: ${newCalendar[monthIndex].Days.length + 1}`);
             events = [{ name: 'BirthOrbit', description: 'Birthday', date: finalFoundBirthMoment.utc().format('YYYY-MM-DD HH:mm:ss') }];
         } else {
             // Check for other astronomical events on this day
@@ -411,6 +417,15 @@ function generateCalendarYear(eventList: Events): void {
             Events: events                                       // Any special events
         };
 
+        // DEBUG: Log day creation when there are events
+        if (events.length > 0) {
+            console.log(`\n  Creating day with events:`);
+            console.log(`    currentDate (moment UTC): ${currentDate.utc().format('YYYY-MM-DD HH:mm:ss')}`);
+            console.log(`    day.Date (JS Date): ${day.Date}`);
+            console.log(`    day.Date UTC string: ${moment(day.Date).utc().format('YYYY-MM-DD HH:mm:ss')}`);
+            console.log(`    monthIndex: ${monthIndex}, dayNumber: ${day.Number}`);
+        }
+
         // Add this day to the appropriate month
         newCalendar[monthIndex].Days.push(day);
 
@@ -429,6 +444,20 @@ function generateCalendarYear(eventList: Events): void {
     // Replace the global calendar with the newly generated one
     calendar.length = 0;
     calendar.push(...newCalendar);
+
+    // DEBUG: Output full calendar structure with dates and events
+    console.log('\n========== FULL CALENDAR DEBUG OUTPUT ==========');
+    newCalendar.forEach((month) => {
+        console.log(`\n${month.Name} (Month ${month.Month}):`);
+        month.Days.forEach((day) => {
+            const dateStr = moment(day.Date).utc().format('YYYY-MM-DD');
+            const eventsStr = day.Events.length > 0
+                ? day.Events.map(e => `${e.name} (${e.date})`).join(', ')
+                : 'none';
+            console.log(`  Day ${day.Number}: ${dateStr} - Events: ${eventsStr}`);
+        });
+    });
+    console.log('================================================\n');
 
     console.log('--- generateCalendarYear() Completed ---\n');
 }
@@ -672,9 +701,16 @@ function getHeliocentricLongitude(date: Date): number {
  */
 function getBirthDegree(birthDate: moment.Moment): number {
     try {
+        console.log('\n--- getBirthDegree() Debug ---');
+        console.log('Birth Date (UTC):', birthDate.utc().format('YYYY-MM-DD HH:mm:ss'));
+
         // Get the seasons for the birth year
         const BirthYearSeasons = Seasons(birthDate.year());
+        const birthYearEquinox = moment(BirthYearSeasons.mar_equinox.toString()).utc();
+        console.log('Birth Year Spring Equinox:', birthYearEquinox.format('YYYY-MM-DD HH:mm:ss'));
+
         let springEquinoxLongitude: number;
+        let referenceEquinoxDate: moment.Moment;
 
         /**
          * Determine which Spring Equinox to use as reference
@@ -683,20 +719,30 @@ function getBirthDegree(birthDate: moment.Moment): number {
          * we need to use the PREVIOUS year's Spring Equinox as our 0° reference.
          * Otherwise, the birth degree would be negative or wrap around incorrectly.
          */
-        if (birthDate < moment(BirthYearSeasons.mar_equinox.toString()).utc()) {
+        if (birthDate < birthYearEquinox) {
             // Birth is before Spring Equinox: use previous year's equinox
             const previousSeasons = Seasons(birthDate.year() - 1);
-            springEquinoxLongitude = getHeliocentricLongitude((moment(previousSeasons.mar_equinox.toString()).utc()).toDate());
+            referenceEquinoxDate = moment(previousSeasons.mar_equinox.toString()).utc();
+            springEquinoxLongitude = getHeliocentricLongitude(referenceEquinoxDate.toDate());
+            console.log('Using PREVIOUS year Spring Equinox:', referenceEquinoxDate.format('YYYY-MM-DD HH:mm:ss'));
         } else {
             // Birth is after Spring Equinox: use current year's equinox
-            springEquinoxLongitude = getHeliocentricLongitude((moment(BirthYearSeasons.mar_equinox.toString()).utc()).toDate());
+            referenceEquinoxDate = birthYearEquinox;
+            springEquinoxLongitude = getHeliocentricLongitude(referenceEquinoxDate.toDate());
+            console.log('Using CURRENT year Spring Equinox:', referenceEquinoxDate.format('YYYY-MM-DD HH:mm:ss'));
         }
 
         // Calculate Earth's heliocentric longitude at the moment of birth
         const BirthLongitude = getHeliocentricLongitude(birthDate.utc().toDate());
+        const birthDegree = getDegree(BirthLongitude, springEquinoxLongitude);
+
+        console.log('Spring Equinox Longitude:', springEquinoxLongitude.toFixed(6) + '°');
+        console.log('Birth Longitude:', BirthLongitude.toFixed(6) + '°');
+        console.log('Birth Degree (offset from equinox):', birthDegree.toFixed(6) + '°');
+        console.log('--- getBirthDegree() End ---\n');
 
         // Return the degree offset from the Spring Equinox
-        return getDegree(BirthLongitude, springEquinoxLongitude);
+        return birthDegree;
     } catch (error) {
         throw new Error(`Failed to calculate birth degree for ${birthDate.format('YYYY-MM-DD')}: ${error}`);
     }
