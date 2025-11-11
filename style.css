@@ -1,47 +1,69 @@
+/**
+ * HELIOCENTRIC CALENDAR STYLESHEET
+ *
+ * This stylesheet is optimized for print-first design with the following goals:
+ * 1. Each month takes up exactly one page when printed
+ * 2. Consistent layout with 7-column week structure
+ * 3. All information visible without clipping
+ * 4. Professional appearance for both screen and print
+ */
+
+/* ============================================================================
+   GLOBAL STYLES
+   ============================================================================ */
+
 body {
     font-family: 'Arial', sans-serif;
     margin: 20px;
-    background-color: #f8f8f8;
+    background-color: #f8f8f8;  /* Light gray background for screen viewing */
   }
-  
+
+  /* Container for each month (one per page when printed) */
   .month-container {
     margin-bottom: 30px;
-    page-break-after: always;
+    page-break-after: always;  /* Force page break after each month for printing */
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
     background-color: white;
   }
-  
+
+  /* Month title (e.g., "♈ Aries") */
   h2 {
     text-align: center;
     color: #333;
     margin-bottom: 15px;
   }
-  
+
+  /* ============================================================================
+     TABLE STRUCTURE
+     ============================================================================ */
+
   table {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 1px;
+    border-spacing: 1px;  /* Small gap between cells */
     margin: 10px 0;
-    table-layout: fixed;
+    table-layout: fixed;  /* Equal-width columns for consistent layout */
     border-radius: 8px;
     overflow: hidden;
   }
-  
+
+  /* Table cells (both header and data) */
   th,
   td {
     border: 1px solid #ddd;
     text-align: center;
     padding: 10px;
-    width: 14.28%;
-    height: 120px;
+    width: 14.28%;  /* 100% / 7 days = 14.28% per column */
+    height: 120px;  /* Fixed height for consistent day cells */
     vertical-align: top;
-    position: relative;
+    position: relative;  /* For absolute positioning of child elements */
     background-color: #fff;
   }
-  
+
+  /* Header row (weekday names and planetary rulers) */
   th {
     background-color: #eee;
     padding: 10px;
@@ -49,15 +71,28 @@ body {
     font-weight: bold;
     color: #555;
   }
-  
+
+  /* Body rows (days) */
   tbody tr {
-    height: 120px;
+    height: 120px;  /* Consistent row height */
   }
-  
+
+  /**
+   * Hide rows beyond the 6th row
+   * This ensures only 6 weeks are shown per month for print consistency
+   */
   tbody tr:nth-child(n + 7) {
     display: none;
   }
-  
+
+  /* ============================================================================
+     DAY CELL ELEMENTS
+     ============================================================================ */
+
+  /**
+   * Events container (top of cell)
+   * Displays astronomical events like equinoxes, solstices, and orbital birthday
+   */
   .events {
     font-size: 0.8em;
     color: #555;
@@ -65,32 +100,44 @@ body {
     border-radius: 5px;
     padding: 5px;
     background-color: #f9f9f9;
-    width: calc(100% - 10px);
+    width: calc(100% - 10px);  /* Account for padding and borders */
     box-sizing: border-box;
     position: absolute;
     top: 5px;
     left: 5px;
-    z-index: 1;
+    z-index: 1;  /* Ensure events appear above other elements */
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    /* --- ADDED/MODIFIED --- */
-    min-height: 2em; /* Adjust as needed, enough for at least one line of text */
+    text-overflow: ellipsis;  /* Show "..." if text is too long */
+    white-space: nowrap;  /* Prevent text wrapping */
+    min-height: 2em;  /* Reserve space even if no events */
   }
-  
-  /* Style for individual event names within the events container */
+
+  /* Individual event names within the events container */
   .events .event-name {
       font-weight: bold;
       margin-bottom: 3px;
   }
-  
+
+  /* Empty cells (padding before first day and after last day) */
   .empty-cell {
-    background-color: #f9f9f9;
+    background-color: #f9f9f9;  /* Lighter shade to distinguish from actual days */
     border: 1px solid #ddd;
   }
-  
-  /* --- Styles for specific elements within each day cell --- */
-  
+
+  /**
+   * DAY CELL LAYOUT (ABSOLUTE POSITIONING)
+   *
+   * Each day cell uses absolute positioning to place information precisely:
+   * - Top-left: Day number (within heliocentric month)
+   * - Top-right: (occupied by events container)
+   * - Middle-left: Solar noon time
+   * - Middle-right: Gregorian date
+   * - Bottom-left: Moon phase
+   * - Bottom-center: Solar degree (Earth's orbital position)
+   * - Bottom-right: Delta (day length variation)
+   */
+
+  /* Day number (heliocentric month day, e.g., "1", "2", "3") */
   .day-number {
     font-size: 1.2em;
     font-weight: bold;
@@ -98,54 +145,63 @@ body {
     top: 10px;
     left: 10px;
     color: #333;
-    z-index: 2;
+    z-index: 2;  /* Above events container */
   }
-  
+
+  /* Solar noon time (when Sun is at highest point) */
   .solar-noon {
     font-size: 0.8em;
     position: absolute;
-    top: 38px; /* --- MODIFIED --- */
+    top: 38px;  /* Below day number */
     left: 10px;
     color: #666;
 }
-  
+
+  /* Gregorian date (for reference, e.g., "Feb 4th") */
 .gregorian-date {
     font-size: 0.8em;
     position: absolute;
-    top: 38px;       /* --- MODIFIED --- */
-    right: 10px;     /* --- MODIFIED --- */
+    top: 38px;   /* Aligned with solar noon */
+    right: 10px;
     color: #555;
   }
-  
+
+  /* Solar degree (Earth's heliocentric position, 0-360°) */
   .solar-degree {
     position: absolute;
     bottom: 5px;
-    left: 57%;          /* --- MODIFIED --- */
-    transform: translateX(-50%);
+    left: 57%;  /* Slightly off-center to avoid overlap */
+    transform: translateX(-50%);  /* Center the text on the position */
     font-size: 0.8em;
-    font-weight: bold; /* --- ADDED --- */
+    font-weight: bold;
     color: #666;
 }
-  
+
+  /* Moon phase (e.g., "New Moon", "Full Moon") */
   .moon-phase {
     position: absolute;
-    bottom: 5px; /* Position at the bottom */
-    left: 5px;   /* Position at the left */
+    bottom: 5px;
+    left: 5px;
     font-size: 0.8em;
     color: #666;
   }
-  
+
+  /**
+   * Delta (day length variation from 24 hours)
+   * Shows how many seconds longer (+) or shorter (-) than 24 hours
+   */
   .delta {
     position: absolute;
-    bottom: 5px; /* Position at the bottom */
-    right: 5px;  /* Position at the right */
+    bottom: 5px;
+    right: 5px;
     font-size: 0.8em;
     opacity: 0.7;
   }
-    /* --- Colors for delta values --- */
+
+  /* Color coding for delta values */
   .green {
-      color: green;
+      color: green;  /* Day is longer than 24 hours */
   }
   .red {
-      color: red;
+      color: red;    /* Day is shorter than 24 hours */
   }

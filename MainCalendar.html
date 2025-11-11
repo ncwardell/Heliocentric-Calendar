@@ -4,13 +4,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Printable Calendar</title>
+  <title>Heliocentric Calendar - Printable</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    /* Styles for planetary weekday symbols (desaturated for print) */
     .day-emoji {
       filter: grayscale(75%);
       opacity: 0.4;
     }
+
+    /* Styles for zodiac planet rulers at solar noon */
     .noon-zodiac {
       font-size: 0.8em;
       opacity: 0.5;
@@ -19,53 +22,80 @@
 </head>
 
 <body>
+  <!-- Main container for the generated calendar -->
   <div id="calendar-container"></div>
+
+  <!-- Calendar generation script (ES6 module) -->
   <script type="module">
+    // Import the calendar generation function
     import { generateCalendar } from './dist/CalendarGenerator.js';
 
+    // Generate the calendar data
     const calendar = generateCalendar();
 
+    /**
+     * Generates HTML representation of the heliocentric calendar
+     *
+     * This function creates a printable calendar with:
+     * - 12 months (zodiac signs) displayed in separate containers
+     * - 7-day weeks aligned with Gregorian calendar
+     * - Each day showing: solar times, moon phase, orbital degree, events
+     *
+     * @param {Array} calendar - Array of month objects from generateCalendar()
+     */
     function generateHTMLCalendar(calendar) {
       const container = document.getElementById('calendar-container');
 
+      // Zodiac symbols for month headers
       const zodiacEmojis = {
-        'Aries': '♈',
-        'Taurus': '♉',
-        'Gemini': '♊',
-        'Cancer': '♋',
-        'Leo': '♌',
-        'Virgo': '♍',
-        'Libra': '♎',
-        'Scorpio': '♏',
-        'Sagittarius': '♐',
-        'Capricorn': '♑',
-        'Aquarius': '♒',
-        'Pisces': '♓'
+        'Aries': '♈',       // Ram
+        'Taurus': '♉',      // Bull
+        'Gemini': '♊',      // Twins
+        'Cancer': '♋',      // Crab
+        'Leo': '♌',         // Lion
+        'Virgo': '♍',       // Maiden
+        'Libra': '♎',       // Scales
+        'Scorpio': '♏',     // Scorpion
+        'Sagittarius': '♐', // Archer
+        'Capricorn': '♑',   // Goat
+        'Aquarius': '♒',    // Water Bearer
+        'Pisces': '♓'       // Fish
       };
 
+      // Gregorian week configuration
       const weekDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const weekPlanets = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'];
-      const weekEmojis = ['♌', '♋', '♈', '♊', '♐', '♉', '♑'];
-      const noonEmojis = ['Jupiter', 'Venus', 'Saturn', 'Sun', 'Moon', 'Mars', 'Mercury'];
-      //const noonEmojis = ['♐', '♉', '♑', '♌', '♋', '♈', '♊']; // Sunday to Saturday
 
+      // Planetary rulers for each weekday (traditional astrology)
+      const weekPlanets = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'];
+
+      // Zodiac symbols for planetary rulers
+      const weekEmojis = ['♌', '♋', '♈', '♊', '♐', '♉', '♑'];
+
+      // Planetary rulers displayed at solar noon for each day
+      const noonEmojis = ['Jupiter', 'Venus', 'Saturn', 'Sun', 'Moon', 'Mars', 'Mercury'];
+
+      // Iterate through each month and generate its HTML
       calendar.forEach(month => {
+        // Create container for this month (will be page-broken for printing)
         const monthContainer = document.createElement('div');
         monthContainer.classList.add('month-container');
 
+        // Create month title with zodiac symbol
         const title = document.createElement('h2');
         const monthEmoji = zodiacEmojis[month.Name] || '';
         title.textContent = `${monthEmoji} ${month.Name}`;
         monthContainer.appendChild(title);
 
+        // Create table structure for the month
         const table = document.createElement('table');
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
 
+        // Generate header row with weekday names and planetary rulers
         weekDayNames.forEach((weekday, index) => {
           const th = document.createElement('th');
-          const emoji = weekEmojis[index];
-          const planet = weekPlanets[index];
+          const emoji = weekEmojis[index];      // Zodiac symbol for planetary ruler
+          const planet = weekPlanets[index];    // Planetary ruler name
           th.innerHTML = `
             <div class="day-emoji">${emoji}</div>
             <b>${planet}</b><br>
@@ -77,20 +107,29 @@
         thead.appendChild(headerRow);
         table.appendChild(thead);
 
+        // Create table body for the days
         const tbody = document.createElement('tbody');
         let currentWeek = [];
+
+        // Determine which day of the week this month starts on (0 = Sunday, 6 = Saturday)
         let startDay = new Date(month.Days[0].Date).getDay();
 
+        // Add empty cells before the first day to align with Gregorian calendar
         for (let i = 0; i < startDay; i++) {
           const emptyCell = document.createElement('td');
           emptyCell.classList.add('empty-cell');
           currentWeek.push(emptyCell);
         }
 
+        // Generate cells for each day in the month
         month.Days.forEach(day => {
           const dayCell = document.createElement('td');
 
-          // Determine delta color based on sign
+          /**
+           * Determine delta color (day length deviation from 24 hours)
+           * - Green: Day is longer than 24 hours (+ value)
+           * - Red: Day is shorter than 24 hours (- value)
+           */
           let deltaColor = '';
           if (day.Delta.startsWith('+')) {
             deltaColor = 'green';
@@ -98,12 +137,28 @@
             deltaColor = 'red';
           }
 
+          /**
+           * Format Gregorian date with ordinal suffix
+           * Examples: "Feb 1st", "Feb 2nd", "Feb 3rd", "Feb 4th"
+           * Special cases: 11th, 12th, 13th (not 11st, 12nd, 13rd)
+           */
           const formattedDate = day.Date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
             ((d => (d >= 11 && d <= 13) ? 'th' : ['th', 'st', 'nd', 'rd'][d % 10] || 'th')(day.Date.getDate()));
 
+          // Get planetary ruler for this weekday
           const noonEmoji = noonEmojis[day.Date.getDay()] || '';
 
-          // --- IMPROVED: Use a template literal with dedicated classes ---
+          /**
+           * Build day cell HTML with all information:
+           * - Day number (heliocentric month)
+           * - Gregorian date (for reference)
+           * - Solar degree (Earth's orbital position)
+           * - Solar noon time
+           * - Planetary ruler
+           * - Moon phase
+           * - Delta (day length variation)
+           * - Events (equinoxes, solstices, orbital birthday)
+           */
           dayCell.innerHTML = `
             <div class="day-number">${day.Number}</div>
             <div class="gregorian-date">${formattedDate}</div>
@@ -113,10 +168,11 @@
             <div class="moon-phase">${day.MoonPhase}</div>
             <div class="delta ${deltaColor}">${day.Delta}</div>
             ${day.Events.length > 0 ? `<div class="events">${day.Events.map(event => `<div class="event-name">${event.name}</div>`).join('')}</div>` : `<div class="events">&nbsp;</div>`}
-          `; //Events no longer use a <br>
+          `;
 
           currentWeek.push(dayCell);
 
+          // If we've filled a week (7 days), add it to the table
           if (currentWeek.length === 7) {
             const weekRow = document.createElement('tr');
             currentWeek.forEach(cell => weekRow.appendChild(cell));
@@ -125,18 +181,25 @@
           }
         });
 
+        // Fill remaining cells in the last week with empty cells
         while (currentWeek.length < 7) {
           const emptyCell = document.createElement('td');
           emptyCell.classList.add('empty-cell');
           currentWeek.push(emptyCell);
         }
 
+        // Add the last week if it has any cells
         if (currentWeek.length > 0) {
           const weekRow = document.createElement('tr');
           currentWeek.forEach(cell => weekRow.appendChild(cell));
           tbody.appendChild(weekRow);
         }
 
+        /**
+         * Ensure table always has 6 rows for consistent printing
+         * This prevents layout shifts between months and ensures
+         * each month takes up the same vertical space when printed
+         */
         while (tbody.rows.length < 6) {
           const emptyRow = document.createElement('tr');
           for (let i = 0; i < 7; i++) {
@@ -147,12 +210,14 @@
           tbody.appendChild(emptyRow);
         }
 
+        // Assemble the table and add to container
         table.appendChild(tbody);
         monthContainer.appendChild(table);
         container.appendChild(monthContainer);
       });
     }
 
+    // Generate and display the calendar
     generateHTMLCalendar(calendar);
   </script>
 </body>
