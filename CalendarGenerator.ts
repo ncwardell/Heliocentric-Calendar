@@ -1,5 +1,15 @@
-import { HelioVector, Body, Seasons, SearchPlanetApsis, NextPlanetApsis, Observer, SearchHourAngle, FlexibleDateTime, MoonPhase, AstroTime } from 'astronomy-engine';
+import { HelioVector, Body, Seasons, SearchPlanetApsis, NextPlanetApsis, Observer, SearchHourAngle, FlexibleDateTime, MoonPhase } from 'astronomy-engine';
 import moment from 'moment-timezone';
+
+// Constants
+const MILLISECONDS_PER_DAY = 86400000;
+const DEGREES_IN_CIRCLE = 360;
+const DEGREES_PER_MONTH = 30;
+const MONTHS_IN_YEAR = 12;
+const DEGREE_PRECISION = 0.001; // Precision for orbital birthday calculation (~4 seconds)
+const MAX_BINARY_SEARCH_ITERATIONS = 100;
+const RADIANS_TO_DEGREES = 180 / Math.PI;
+const HOUR_ANGLE_HORIZON = 12; // Hour angle for solar start/end calculation
 
 enum Months {
     Aries = 1,
@@ -49,7 +59,11 @@ interface Events {
 let calendar: Month[] = [];
 let observer: Observer;
 
-function generateCalendarYear(eventList: Events) {
+/**
+ * Generates a complete calendar year based on heliocentric orbital positions
+ * @param eventList - Object containing all astronomical events for the year
+ */
+function generateCalendarYear(eventList: Events): void {
     const equinoxSolsticeEvents = [
         { date: eventList.SpringEquinox, name: 'Spring Equinox', description: 'The beginning of Spring.' },
         { date: eventList.SummerSolstice, name: 'Summer Solstice', description: 'The longest day of the year.' },
@@ -74,10 +88,8 @@ function generateCalendarYear(eventList: Events) {
     // Calculate the TRUE target birth degree from the ORIGINAL birth moment and keep it constant.
     // eventList.Birth here is the pristine, original birth moment from birthProfile.date.
     const TRUE_TARGET_BIRTH_DEGREE = getBirthDegree(eventList.Birth);
-    console.log("Constant TRUE_TARGET_BIRTH_DEGREE set to: ", TRUE_TARGET_BIRTH_DEGREE);
 
     let currentDate = eventList.SpringEquinox.clone();
-    console.log("Initial currentDate UTC for loop:", currentDate.toISOString()); // ADD THIS
     // This variable will store the most accurately found moment for the TRUE_TARGET_BIRTH_DEGREE.
     // Initialize with the original birth moment as a fallback or if not found (though it should be found).
     let finalFoundBirthMoment = eventList.Birth.clone();
@@ -113,16 +125,15 @@ function generateCalendarYear(eventList: Events) {
             let low = startTime.valueOf();
             let high = endTime.valueOf();
             let iterations = 0;
-            const maxIterations = 100; // Safety break for binary search
 
-            while (low <= high && iterations < maxIterations) {
+            while (low <= high && iterations < MAX_BINARY_SEARCH_ITERATIONS) {
                 iterations++;
                 const mid = low + Math.floor((high - low) / 2); // More stable midpoint
                 const testMoment = moment(mid);
                 const testDegree = getDegree(getHeliocentricLongitude(testMoment.toDate()), springEquinoxLongitude);
 
                 // Compare testDegree with the constant TRUE_TARGET_BIRTH_DEGREE
-                if (Math.abs(testDegree - TRUE_TARGET_BIRTH_DEGREE) < 0.001) {
+                if (Math.abs(testDegree - TRUE_TARGET_BIRTH_DEGREE) < DEGREE_PRECISION) {
                     birthMomentCurrentIteration = testMoment;
                     break;
                 } else if (testDegree < TRUE_TARGET_BIRTH_DEGREE) {
@@ -142,21 +153,17 @@ function generateCalendarYear(eventList: Events) {
             }
 
             if (birthMomentCurrentIteration) {
-                console.log("Target degree " + TRUE_TARGET_BIRTH_DEGREE + " found on " + currentDate.format("YYYY-MM-DD") + " at: " + birthMomentCurrentIteration.format('YYYY-MM-DD HH:mm:ss.SSS'));
                 // Update finalFoundBirthMoment. If the target degree is found on multiple days
                 // (possible with rounding if it's right on a day boundary for the SolarStart/End window),
                 // this will take the finding from the latest day it was found on.
                 // For a birth within the year, it should ideally only be found precisely on one day's search window.
                 finalFoundBirthMoment = birthMomentCurrentIteration;
-            } else {
-                // This might happen if the degree is at the very edge and precision issues prevent exact match
-                // console.log("Target degree " + TRUE_TARGET_BIRTH_DEGREE + " not precisely matched by binary search on " + currentDate.format("YYYY-MM-DD"));
             }
         }
 
         const currentHelioLongitude = getHeliocentricLongitude(dayInfo.SolarNoon.toDate());
-        let monthIndex = Math.floor(getDegree(currentHelioLongitude, springEquinoxLongitude) / 30);
-        if (monthIndex >= 12) monthIndex = 0; // Ensure it wraps around for Pisces end of year
+        let monthIndex = Math.floor(getDegree(currentHelioLongitude, springEquinoxLongitude) / DEGREES_PER_MONTH);
+        if (monthIndex >= MONTHS_IN_YEAR) monthIndex = 0; // Ensure it wraps around for Pisces end of year
 
         let events;
 
@@ -164,7 +171,6 @@ function generateCalendarYear(eventList: Events) {
         // This ensures the event is placed based on the single, most accurately determined moment.
         if (finalFoundBirthMoment.format('MM/DD/YY') == currentDate.format('MM/DD/YY')) {
             events = [{ name: 'BirthOrbit', description: 'Birthday', date: finalFoundBirthMoment.format('YYYY-MM-DD HH:mm:ss') }];
-            console.log('BirthOrbit event WILL BE PLACED on ' + currentDate.format('MM/DD/YY') + ' (using found moment: ' + finalFoundBirthMoment.format('YYYY-MM-DD HH:mm:ss') + ')');
         } else {
             events = equinoxSolsticeEvents
                 .filter(event => event.date.format('MM/DD/YY') === currentDate.format('MM/DD/YY'))
@@ -195,113 +201,168 @@ function generateCalendarYear(eventList: Events) {
     calendar.push(...newCalendar);
 }
 
-const getDegree = (helioLongitude, springEquinoxLongitude) => parseFloat(
-    ((helioLongitude - springEquinoxLongitude + 360) % 360).toFixed(2)
+/**
+ * Calculates the degree offset from the Spring Equinox
+ * @param helioLongitude - Current heliocentric longitude
+ * @param springEquinoxLongitude - Reference Spring Equinox longitude
+ * @returns Normalized degree value (0-360)
+ */
+const getDegree = (helioLongitude: number, springEquinoxLongitude: number): number => parseFloat(
+    ((helioLongitude - springEquinoxLongitude + DEGREES_IN_CIRCLE) % DEGREES_IN_CIRCLE).toFixed(2)
 );
 
-const eventList = (year: number, birth: moment.Moment) => {
-    const season = Seasons(year);
-    const nextSeason = Seasons(year + 1);
-    const Apsis = SearchPlanetApsis(Body.Earth, new Date(year, 4, 1));
+/**
+ * Generates list of astronomical events for a given year
+ * @param year - The year to generate events for
+ * @param birth - The birth date/time
+ * @returns Object containing all major astronomical events
+ */
+const eventList = (year: number, birth: moment.Moment): Events => {
+    try {
+        const season = Seasons(year);
+        const nextSeason = Seasons(year + 1);
+        const Apsis = SearchPlanetApsis(Body.Earth, new Date(year, 4, 1));
 
-    const list: Events = {
-        SpringEquinox: moment(season.mar_equinox.toString()).utc(),
-        SummerSolstice: moment(season.jun_solstice.toString()).utc(),
-        AutumnEquinox: moment(season.sep_equinox.toString()).utc(),
-        WinterSolstice: moment(season.dec_solstice.toString()).utc(),
-        SpringEquinox2: moment(nextSeason.mar_equinox.toString()).utc(),
-        Aphelion: moment(Apsis.time.toString()).utc(),
-        Perihelion: moment(NextPlanetApsis(Body.Earth, Apsis).time.toString()).utc(),
-        Birth: birth
-    }
-    
+        const list: Events = {
+            SpringEquinox: moment(season.mar_equinox.toString()).utc(),
+            SummerSolstice: moment(season.jun_solstice.toString()).utc(),
+            AutumnEquinox: moment(season.sep_equinox.toString()).utc(),
+            WinterSolstice: moment(season.dec_solstice.toString()).utc(),
+            SpringEquinox2: moment(nextSeason.mar_equinox.toString()).utc(),
+            Aphelion: moment(Apsis.time.toString()).utc(),
+            Perihelion: moment(NextPlanetApsis(Body.Earth, Apsis).time.toString()).utc(),
+            Birth: birth
+        };
 
-    return list;
-}
-
-const getDayInfo = (date: FlexibleDateTime) => {
-    let SolarNoon = moment(SearchHourAngle(Body.Sun, observer, 0, date).time.toString());
-    let Moon = MoonPhase(SolarNoon.toDate());
-    let Phase = "";
-
-    if (Moon >= 0 && Moon < 45) {
-        Phase = "New Moon";
-    } else if (Moon >= 45 && Moon < 90) {
-        Phase = "Waxing Cres.";
-    } else if (Moon >= 90 && Moon < 135) {
-        Phase = "First Quarter";
-    } else if (Moon >= 135 && Moon < 180) {
-        Phase = "Waxing Gibb.";
-    } else if (Moon >= 180 && Moon < 225) {
-        Phase = "Full Moon";
-    } else if (Moon >= 225 && Moon < 270) {
-        Phase = "Waning Gibb.";
-    } else if (Moon >= 270 && Moon < 315) {
-        Phase = "Third Quarter";
-    } else if (Moon >= 315 && Moon <= 360) {
-        Phase = "Waning Cres.";
-    }
-
-    const SolarStart = moment(SearchHourAngle(Body.Sun, observer, 12, SolarNoon.toDate(), -1).time.toString()).utc();
-    const SolarEnd = moment(SearchHourAngle(Body.Sun, observer, 12, SolarNoon.toDate(), +1).time.toString()).utc();
-
-    const TimeInDay = SolarEnd.diff(SolarStart);
-
-    const sign = TimeInDay >= 86400000 ? '+' : '-';
-    const duration = TimeInDay - 86400000;
-
-    const formattedDuration = Math.abs(duration) / 1000;
-
-
-
-    return {
-        MoonPhase: Phase,
-        SolarStart: SolarStart,
-        SolarNoon: SolarNoon,
-        SolarEnd: SolarEnd,
-        Delta: `${sign}${formattedDuration}`,
+        return list;
+    } catch (error) {
+        throw new Error(`Failed to calculate astronomical events for year ${year}: ${error}`);
     }
 }
 
-function getHeliocentricLongitude(date: Date) {
-    const { x, y } = HelioVector(Body.Earth, date);
-    const heliocentricLongitude = (Math.atan2(y, x) * (180 / Math.PI) + 360) % 360;
-    return heliocentricLongitude;
-}
+/**
+ * Calculates day information including solar times and moon phase
+ * @param date - The date to get information for
+ * @returns Object containing moon phase, solar start/noon/end times, and day length delta
+ */
+const getDayInfo = (date: FlexibleDateTime): {
+    MoonPhase: string;
+    SolarStart: moment.Moment;
+    SolarNoon: moment.Moment;
+    SolarEnd: moment.Moment;
+    Delta: string;
+} => {
+    try {
+        const SolarNoon = moment(SearchHourAngle(Body.Sun, observer, 0, date).time.toString());
+        const Moon = MoonPhase(SolarNoon.toDate());
+        let Phase = "";
 
+        // Determine moon phase based on degree (0-360)
+        if (Moon >= 0 && Moon < 45) {
+            Phase = "New Moon";
+        } else if (Moon >= 45 && Moon < 90) {
+            Phase = "Waxing Cres.";
+        } else if (Moon >= 90 && Moon < 135) {
+            Phase = "First Quarter";
+        } else if (Moon >= 135 && Moon < 180) {
+            Phase = "Waxing Gibb.";
+        } else if (Moon >= 180 && Moon < 225) {
+            Phase = "Full Moon";
+        } else if (Moon >= 225 && Moon < 270) {
+            Phase = "Waning Gibb.";
+        } else if (Moon >= 270 && Moon < 315) {
+            Phase = "Third Quarter";
+        } else if (Moon >= 315 && Moon <= 360) {
+            Phase = "Waning Cres.";
+        }
 
-function getBirthDegree(birthDate: moment.Moment) {
+        // Calculate solar day boundaries (12° below horizon)
+        const SolarStart = moment(SearchHourAngle(Body.Sun, observer, HOUR_ANGLE_HORIZON, SolarNoon.toDate(), -1).time.toString()).utc();
+        const SolarEnd = moment(SearchHourAngle(Body.Sun, observer, HOUR_ANGLE_HORIZON, SolarNoon.toDate(), +1).time.toString()).utc();
 
-    const BirthYearSeasons = Seasons(birthDate.year())
-    let springEquinoxLongitude;
+        const TimeInDay = SolarEnd.diff(SolarStart);
 
-    if (birthDate < moment(BirthYearSeasons.mar_equinox.toString()).utc()) {
-        const previousSeasons = Seasons(birthDate.year() - 1)
-        springEquinoxLongitude = getHeliocentricLongitude((moment(previousSeasons.mar_equinox.toString()).utc()).toDate())
-    } else {
-        springEquinoxLongitude = getHeliocentricLongitude((moment(BirthYearSeasons.mar_equinox.toString()).utc()).toDate())
+        const sign = TimeInDay >= MILLISECONDS_PER_DAY ? '+' : '-';
+        const duration = TimeInDay - MILLISECONDS_PER_DAY;
+
+        const formattedDuration = Math.abs(duration) / 1000;
+
+        return {
+            MoonPhase: Phase,
+            SolarStart: SolarStart,
+            SolarNoon: SolarNoon,
+            SolarEnd: SolarEnd,
+            Delta: `${sign}${formattedDuration}`,
+        };
+    } catch (error) {
+        throw new Error(`Failed to calculate day information for ${date}: ${error}`);
     }
+}
 
-    let BirthLongitude = getHeliocentricLongitude(birthDate.utc().toDate());
-
-    return (getDegree(BirthLongitude, springEquinoxLongitude));
-
+/**
+ * Calculates Earth's heliocentric longitude (orbital position) for a given date
+ * @param date - The date to calculate longitude for
+ * @returns Heliocentric longitude in degrees (0-360)
+ */
+function getHeliocentricLongitude(date: Date): number {
+    try {
+        const { x, y } = HelioVector(Body.Earth, date);
+        const heliocentricLongitude = (Math.atan2(y, x) * RADIANS_TO_DEGREES + DEGREES_IN_CIRCLE) % DEGREES_IN_CIRCLE;
+        return heliocentricLongitude;
+    } catch (error) {
+        throw new Error(`Failed to calculate heliocentric longitude for ${date}: ${error}`);
+    }
 }
 
 
+/**
+ * Calculates the birth degree relative to the Spring Equinox of the birth year
+ * @param birthDate - The birth date/time
+ * @returns Birth degree (0-360) from the Spring Equinox
+ */
+function getBirthDegree(birthDate: moment.Moment): number {
+    try {
+        const BirthYearSeasons = Seasons(birthDate.year());
+        let springEquinoxLongitude: number;
+
+        // If birth is before the Spring Equinox, use previous year's equinox as reference
+        if (birthDate < moment(BirthYearSeasons.mar_equinox.toString()).utc()) {
+            const previousSeasons = Seasons(birthDate.year() - 1);
+            springEquinoxLongitude = getHeliocentricLongitude((moment(previousSeasons.mar_equinox.toString()).utc()).toDate());
+        } else {
+            springEquinoxLongitude = getHeliocentricLongitude((moment(BirthYearSeasons.mar_equinox.toString()).utc()).toDate());
+        }
+
+        const BirthLongitude = getHeliocentricLongitude(birthDate.utc().toDate());
+
+        return getDegree(BirthLongitude, springEquinoxLongitude);
+    } catch (error) {
+        throw new Error(`Failed to calculate birth degree for ${birthDate.format('YYYY-MM-DD')}: ${error}`);
+    }
+}
+
+
+/**
+ * Birth profile configuration
+ * TODO: Move to configuration file or user input
+ */
 const birthProfile = {
-    observer: new Observer(41.454380, -74.430420, 0),
+    observer: new Observer(41.454380, -74.430420, 0), // Latitude, Longitude, Elevation (meters)
     date: moment.tz('2000-02-04 10:00', 'YYYY-MM-DD HH:mm', 'America/New_York').utc()
-    //date: moment.tz('1999-08-04 9:04', 'YYYY-MM-DD HH:mm', 'America/New_York').utc()
 }
 
-export const generateCalendar = () => {
-    //observer = new Observer(40.048566, -74.139358, 0); // Example coordinates
-    observer= birthProfile.observer
-    let events = eventList(2025, birthProfile.date);
-    console.log("Initial eventList.SpringEquinox UTC:", events.SpringEquinox.toISOString()); // ADD THIS
-    generateCalendarYear(events);
-    console.log(calendar)
-    return calendar;
+/**
+ * Main function to generate a heliocentric calendar
+ * @returns Array of months with day information
+ */
+export const generateCalendar = (): Month[] => {
+    try {
+        observer = birthProfile.observer;
+        const events = eventList(2025, birthProfile.date);
+        generateCalendarYear(events);
+        return calendar;
+    } catch (error) {
+        throw new Error(`Failed to generate calendar: ${error}`);
+    }
 };
 

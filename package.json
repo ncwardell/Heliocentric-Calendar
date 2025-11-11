@@ -1,8 +1,30 @@
 {
+  "name": "heliocentric-calendar",
+  "version": "1.0.0",
+  "description": "A custom-built calendar system based on Earth's heliocentric orbital position",
+  "main": "dist/CalendarGenerator.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "rebuild": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "calendar",
+    "astronomy",
+    "heliocentric",
+    "zodiac"
+  ],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "astronomy-engine": "^2.1.19",
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.46",
     "sweph": "^2.10.3-4"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
   }
 }
