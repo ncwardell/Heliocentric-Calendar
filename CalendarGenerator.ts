@@ -388,14 +388,14 @@ function generateCalendarYear(eventList: Events): void {
          * falls on this day, it's the only event shown. Otherwise, we check
          * for equinoxes, solstices, aphelion, and perihelion.
          */
-        if (finalFoundBirthMoment.format('MM/DD/YY') == currentDate.format('MM/DD/YY')) {
+        if (finalFoundBirthMoment.utc().format('YYYY-MM-DD') === currentDate.utc().format('YYYY-MM-DD')) {
             // This is the orbital birthday - the day Earth returns to birth position
-            events = [{ name: 'BirthOrbit', description: 'Birthday', date: finalFoundBirthMoment.format('YYYY-MM-DD HH:mm:ss') }];
+            events = [{ name: 'BirthOrbit', description: 'Birthday', date: finalFoundBirthMoment.utc().format('YYYY-MM-DD HH:mm:ss') }];
         } else {
             // Check for other astronomical events on this day
             events = equinoxSolsticeEvents
-                .filter(event => event.date.format('MM/DD/YY') === currentDate.format('MM/DD/YY'))
-                .map(event => ({ name: event.name, description: event.description, date: event.date.format('YYYY-MM-DD HH:mm:ss') }));
+                .filter(event => event.date.utc().format('YYYY-MM-DD') === currentDate.utc().format('YYYY-MM-DD'))
+                .map(event => ({ name: event.name, description: event.description, date: event.date.utc().format('YYYY-MM-DD HH:mm:ss') }));
         }
 
         // Create the day object with all calculated information
