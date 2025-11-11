@@ -187,6 +187,8 @@ let observer: Observer;
  * @param eventList - Object containing all astronomical events for the year
  */
 function generateCalendarYear(eventList: Events): void {
+    console.log('\n--- generateCalendarYear() Started ---');
+
     // Define major astronomical events that will be displayed on the calendar
     const equinoxSolsticeEvents = [
         { date: eventList.SpringEquinox, name: 'Spring Equinox', description: 'The beginning of Spring.' },
@@ -222,9 +224,12 @@ function generateCalendarYear(eventList: Events): void {
      * your orbital birthday occurs each year when Earth reaches 45° again.
      */
     const TRUE_TARGET_BIRTH_DEGREE = getBirthDegree(eventList.Birth);
+    console.log('Birth degree (relative to Spring Equinox):', TRUE_TARGET_BIRTH_DEGREE.toFixed(3) + '°');
 
     // Start iterating from the Spring Equinox
     let currentDate = eventList.SpringEquinox.clone();
+    console.log('Starting date iteration from:', currentDate.format('YYYY-MM-DD'));
+    console.log('Ending date iteration at:', eventList.SpringEquinox2.format('YYYY-MM-DD'));
 
     /**
      * Variable to store the most precisely found moment when Earth returns
@@ -233,8 +238,17 @@ function generateCalendarYear(eventList: Events): void {
      */
     let finalFoundBirthMoment = eventList.Birth.clone();
 
+    // Day counter for progress logging
+    let dayCounter = 0;
+
     // Iterate through each day from Spring Equinox to the next Spring Equinox
     while (currentDate.isBefore(eventList.SpringEquinox2, 'day')) {
+        dayCounter++;
+
+        // Log progress every 30 days
+        if (dayCounter % 30 === 0) {
+            console.log(`Processing day ${dayCounter}: ${currentDate.format('YYYY-MM-DD')}`);
+        }
         // Get solar times, moon phase, and delta for the current day
         const dayInfo = getDayInfo(currentDate.toDate());
 
@@ -309,6 +323,12 @@ function generateCalendarYear(eventList: Events): void {
                 // Check if we've found the birth degree within acceptable precision
                 if (Math.abs(testDegree - TRUE_TARGET_BIRTH_DEGREE) < DEGREE_PRECISION) {
                     birthMomentCurrentIteration = testMoment;
+                    console.log(`\n🎂 ORBITAL BIRTHDAY FOUND!`);
+                    console.log('  Date/Time:', testMoment.format('YYYY-MM-DD HH:mm:ss'));
+                    console.log('  Degree:', testDegree.toFixed(6) + '°');
+                    console.log('  Target Degree:', TRUE_TARGET_BIRTH_DEGREE.toFixed(6) + '°');
+                    console.log('  Precision:', Math.abs(testDegree - TRUE_TARGET_BIRTH_DEGREE).toFixed(6) + '°');
+                    console.log('  Binary search iterations:', iterations);
                     break;
                 }
                 // Test degree is less than target: search the later half
@@ -398,14 +418,19 @@ function generateCalendarYear(eventList: Events): void {
         currentDate.add(1, 'days');
     }
 
+    console.log(`\nProcessed total of ${dayCounter} days`);
+
     // Update the total day count for each month
-    newCalendar.forEach(month => {
+    newCalendar.forEach((month) => {
         month.TotalDays = month.Days.length;
+        console.log(`${month.Name}: ${month.TotalDays} days`);
     });
 
     // Replace the global calendar with the newly generated one
     calendar.length = 0;
     calendar.push(...newCalendar);
+
+    console.log('--- generateCalendarYear() Completed ---\n');
 }
 
 // ============================================================================
@@ -679,32 +704,6 @@ function getBirthDegree(birthDate: moment.Moment): number {
 
 
 // ============================================================================
-// CONFIGURATION
-// ============================================================================
-
-/**
- * Birth profile configuration
- *
- * TODO: Future Enhancement - Move to configuration file or user input form
- *
- * This configuration defines:
- * 1. Observer location: Geographic coordinates for calculating solar times
- *    - Latitude: 41.454380° N (positive = North, negative = South)
- *    - Longitude: -74.430420° E (positive = East, negative = West)
- *    - Elevation: 0 meters above sea level
- *
- * 2. Birth date/time: The exact moment of birth in the observer's local timezone
- *    - Date: February 4, 2000
- *    - Time: 10:00 AM
- *    - Timezone: America/New_York (EST/EDT)
- *    - Stored as UTC internally for consistency
- */
-const birthProfile = {
-    observer: new Observer(41.454380, -74.430420, 0), // Latitude, Longitude, Elevation (meters)
-    date: moment.tz('2000-02-04 10:00', 'YYYY-MM-DD HH:mm', 'America/New_York').utc()
-}
-
-// ============================================================================
 // MAIN EXPORT FUNCTION
 // ============================================================================
 
@@ -720,32 +719,67 @@ const birthProfile = {
  * The calendar is based on Earth's actual orbital position around the Sun,
  * divided into 12 months of 30° each, starting from the Spring Equinox.
  *
- * Current limitations:
- * - Hardcoded to generate calendar for 2025
- * - Uses hardcoded birth profile (see birthProfile constant)
- *
- * Future enhancements:
- * - Accept year as parameter
- * - Accept observer location and birth date as parameters
- * - Clear cache between different calendar generations
- *
+ * @param year - The year to generate the calendar for
+ * @param birthDate - Birth date in YYYY-MM-DD format
+ * @param birthTime - Birth time in HH:mm format
+ * @param timezone - IANA timezone string (e.g., 'America/New_York')
+ * @param latitude - Latitude in decimal degrees (positive = North, negative = South)
+ * @param longitude - Longitude in decimal degrees (positive = East, negative = West)
+ * @param elevation - Elevation in meters above sea level
  * @returns Array of 12 Month objects with complete day information
  * @throws Error if calendar generation fails
  */
-export const generateCalendar = (): Month[] => {
+export const generateCalendar = (
+    year: number = 2025,
+    birthDate: string = '2000-02-04',
+    birthTime: string = '10:00',
+    timezone: string = 'America/New_York',
+    latitude: number = 41.454380,
+    longitude: number = -74.430420,
+    elevation: number = 0
+): Month[] => {
     try {
-        // Set the global observer location for astronomical calculations
-        observer = birthProfile.observer;
+        console.log('\n=== generateCalendar() Started ===');
+        console.log('Parameters:');
+        console.log('  Year:', year);
+        console.log('  Birth Date:', birthDate);
+        console.log('  Birth Time:', birthTime);
+        console.log('  Timezone:', timezone);
+        console.log('  Location:', { latitude, longitude, elevation });
 
-        // Calculate all astronomical events for 2025
-        const events = eventList(2025, birthProfile.date);
+        // Create observer location for astronomical calculations
+        observer = new Observer(latitude, longitude, elevation);
+        console.log('Observer created:', { latitude, longitude, elevation });
+
+        // Parse birth date and time
+        const birthDateTime = moment.tz(`${birthDate} ${birthTime}`, 'YYYY-MM-DD HH:mm', timezone).utc();
+        console.log('Birth DateTime (UTC):', birthDateTime.format('YYYY-MM-DD HH:mm:ss'));
+
+        // Clear the cache to ensure fresh calculations
+        heliocentricLongitudeCache.clear();
+        console.log('Heliocentric longitude cache cleared');
+
+        // Calculate all astronomical events for the target year
+        console.log(`\nCalculating astronomical events for year ${year}...`);
+        const events = eventList(year, birthDateTime);
+        console.log('Astronomical events calculated:');
+        console.log('  Spring Equinox:', events.SpringEquinox.format('YYYY-MM-DD HH:mm:ss'));
+        console.log('  Summer Solstice:', events.SummerSolstice.format('YYYY-MM-DD HH:mm:ss'));
+        console.log('  Autumn Equinox:', events.AutumnEquinox.format('YYYY-MM-DD HH:mm:ss'));
+        console.log('  Winter Solstice:', events.WinterSolstice.format('YYYY-MM-DD HH:mm:ss'));
+        console.log('  Aphelion:', events.Aphelion.format('YYYY-MM-DD HH:mm:ss'));
+        console.log('  Perihelion:', events.Perihelion.format('YYYY-MM-DD HH:mm:ss'));
 
         // Generate the complete calendar year
+        console.log('\nGenerating calendar year...');
         generateCalendarYear(events);
+        console.log('Calendar year generated successfully!');
+        console.log('Total months:', calendar.length);
 
         // Return the generated calendar
         return calendar;
     } catch (error) {
+        console.error('ERROR in generateCalendar():', error);
         throw new Error(`Failed to generate calendar: ${error}`);
     }
 };

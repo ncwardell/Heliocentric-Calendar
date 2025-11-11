@@ -18,20 +18,248 @@
       font-size: 0.8em;
       opacity: 0.5;
     }
+
+    /* Modal popup styles */
+    .modal {
+      display: block;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 5% auto;
+      padding: 30px;
+      border: 1px solid #888;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-content h2 {
+      margin-top: 0;
+      color: #333;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #555;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #4CAF50;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    .submit-btn:hover {
+      background-color: #45a049;
+    }
+
+    .form-note {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+      font-style: italic;
+    }
+
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 
 <body>
+  <!-- Birth Profile Input Modal -->
+  <div id="birthProfileModal" class="modal">
+    <div class="modal-content">
+      <h2>🌍 Heliocentric Calendar Setup</h2>
+      <form id="birthProfileForm">
+        <div class="form-group">
+          <label for="birthDate">Birth Date:</label>
+          <input type="date" id="birthDate" name="birthDate" required value="2000-02-04">
+          <p class="form-note">Enter your date of birth</p>
+        </div>
+
+        <div class="form-group">
+          <label for="birthTime">Birth Time:</label>
+          <input type="time" id="birthTime" name="birthTime" required value="10:00">
+          <p class="form-note">Enter your time of birth (local time)</p>
+        </div>
+
+        <div class="form-group">
+          <label for="timezone">Timezone:</label>
+          <select id="timezone" name="timezone" required>
+            <option value="America/New_York">America/New_York (EST/EDT)</option>
+            <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+            <option value="America/Denver">America/Denver (MST/MDT)</option>
+            <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+            <option value="America/Phoenix">America/Phoenix (MST - no DST)</option>
+            <option value="America/Anchorage">America/Anchorage (AKST/AKDT)</option>
+            <option value="Pacific/Honolulu">Pacific/Honolulu (HST)</option>
+            <option value="Europe/London">Europe/London (GMT/BST)</option>
+            <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+            <option value="Europe/Berlin">Europe/Berlin (CET/CEST)</option>
+            <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+            <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
+            <option value="Australia/Sydney">Australia/Sydney (AEDT/AEST)</option>
+            <option value="UTC">UTC</option>
+          </select>
+          <p class="form-note">Select your birth location timezone</p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="latitude">Latitude:</label>
+            <input type="number" id="latitude" name="latitude" step="0.000001" required value="41.454380">
+            <p class="form-note">North (+) / South (-)</p>
+          </div>
+          <div class="form-group">
+            <label for="longitude">Longitude:</label>
+            <input type="number" id="longitude" name="longitude" step="0.000001" required value="-74.430420">
+            <p class="form-note">East (+) / West (-)</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="elevation">Elevation (meters):</label>
+          <input type="number" id="elevation" name="elevation" step="1" required value="0">
+          <p class="form-note">Elevation above sea level</p>
+        </div>
+
+        <div class="form-group">
+          <label for="calendarYear">Calendar Year:</label>
+          <input type="number" id="calendarYear" name="calendarYear" min="1900" max="2100" required value="2025">
+          <p class="form-note">Year to display the calendar for</p>
+        </div>
+
+        <button type="submit" class="submit-btn">Generate Calendar</button>
+      </form>
+    </div>
+  </div>
+
   <!-- Main container for the generated calendar -->
   <div id="calendar-container"></div>
 
   <!-- Calendar generation script (ES6 module) -->
   <script type="module">
-    // Import the calendar generation function
+    // Import the calendar generation function and dependencies
     import { generateCalendar } from './dist/CalendarGenerator.js';
 
-    // Generate the calendar data
-    const calendar = generateCalendar();
+    console.log('=== Heliocentric Calendar Application Started ===');
+    console.log('Waiting for user to input birth profile...');
+
+    // Handle form submission
+    document.getElementById('birthProfileForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      console.log('\n=== Form Submitted ===');
+
+      // Get form values
+      const formData = {
+        birthDate: document.getElementById('birthDate').value,
+        birthTime: document.getElementById('birthTime').value,
+        timezone: document.getElementById('timezone').value,
+        latitude: parseFloat(document.getElementById('latitude').value),
+        longitude: parseFloat(document.getElementById('longitude').value),
+        elevation: parseFloat(document.getElementById('elevation').value),
+        calendarYear: parseInt(document.getElementById('calendarYear').value)
+      };
+
+      console.log('Birth Profile Data:', {
+        'Birth Date': formData.birthDate,
+        'Birth Time': formData.birthTime,
+        'Timezone': formData.timezone,
+        'Latitude': formData.latitude,
+        'Longitude': formData.longitude,
+        'Elevation (m)': formData.elevation,
+        'Calendar Year': formData.calendarYear
+      });
+
+      // Hide the modal
+      document.getElementById('birthProfileModal').classList.add('hidden');
+      console.log('Modal hidden, generating calendar...');
+
+      try {
+        // Generate the calendar data with the provided parameters
+        console.log('\n=== Calling generateCalendar() ===');
+        const calendar = generateCalendar(
+          formData.calendarYear,
+          formData.birthDate,
+          formData.birthTime,
+          formData.timezone,
+          formData.latitude,
+          formData.longitude,
+          formData.elevation
+        );
+
+        console.log('Calendar generated successfully!');
+        console.log('Number of months:', calendar.length);
+
+        // Log summary of each month
+        calendar.forEach((month, index) => {
+          console.log(`Month ${index + 1}: ${month.Name} - ${month.TotalDays} days`);
+        });
+
+        // Generate and display the HTML calendar
+        console.log('\n=== Generating HTML Calendar ===');
+        generateHTMLCalendar(calendar);
+        console.log('Calendar HTML generated and displayed!');
+
+      } catch (error) {
+        console.error('ERROR generating calendar:', error);
+        alert('Error generating calendar: ' + error.message);
+      }
+    });
+
+    // Calendar variable will be populated when form is submitted
+    let calendar = null;
 
     /**
      * Generates HTML representation of the heliocentric calendar
@@ -44,7 +272,12 @@
      * @param {Array} calendar - Array of month objects from generateCalendar()
      */
     function generateHTMLCalendar(calendar) {
+      console.log('generateHTMLCalendar() called with', calendar.length, 'months');
       const container = document.getElementById('calendar-container');
+
+      // Clear any existing calendar
+      container.innerHTML = '';
+      console.log('Container cleared');
 
       // Zodiac symbols for month headers
       const zodiacEmojis = {
@@ -75,7 +308,9 @@
       const noonEmojis = ['Jupiter', 'Venus', 'Saturn', 'Sun', 'Moon', 'Mars', 'Mercury'];
 
       // Iterate through each month and generate its HTML
-      calendar.forEach(month => {
+      calendar.forEach((month, monthIndex) => {
+        console.log(`\n--- Generating HTML for Month ${monthIndex + 1}: ${month.Name} (${month.TotalDays} days) ---`);
+
         // Create container for this month (will be page-broken for printing)
         const monthContainer = document.createElement('div');
         monthContainer.classList.add('month-container');
@@ -122,7 +357,14 @@
         }
 
         // Generate cells for each day in the month
-        month.Days.forEach(day => {
+        month.Days.forEach((day, dayIndex) => {
+          if (dayIndex === 0) {
+            console.log(`First day: ${day.Date.toDateString()}, Solar Degree: ${day.SolarDegree}°`);
+          }
+          if (day.Events.length > 0) {
+            console.log(`Day ${day.Number}: Events - ${day.Events.map(e => e.name).join(', ')}`);
+          }
+
           const dayCell = document.createElement('td');
 
           /**
@@ -215,10 +457,9 @@
         monthContainer.appendChild(table);
         container.appendChild(monthContainer);
       });
-    }
 
-    // Generate and display the calendar
-    generateHTMLCalendar(calendar);
+      console.log('\n=== HTML Calendar Generation Complete ===');
+    }
   </script>
 </body>
 

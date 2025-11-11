@@ -69,18 +69,16 @@ interface Month {
  * The calendar is based on Earth's actual orbital position around the Sun,
  * divided into 12 months of 30° each, starting from the Spring Equinox.
  *
- * Current limitations:
- * - Hardcoded to generate calendar for 2025
- * - Uses hardcoded birth profile (see birthProfile constant)
- *
- * Future enhancements:
- * - Accept year as parameter
- * - Accept observer location and birth date as parameters
- * - Clear cache between different calendar generations
- *
+ * @param year - The year to generate the calendar for
+ * @param birthDate - Birth date in YYYY-MM-DD format
+ * @param birthTime - Birth time in HH:mm format
+ * @param timezone - IANA timezone string (e.g., 'America/New_York')
+ * @param latitude - Latitude in decimal degrees (positive = North, negative = South)
+ * @param longitude - Longitude in decimal degrees (positive = East, negative = West)
+ * @param elevation - Elevation in meters above sea level
  * @returns Array of 12 Month objects with complete day information
  * @throws Error if calendar generation fails
  */
-export declare const generateCalendar: () => Month[];
+export declare const generateCalendar: (year?: number, birthDate?: string, birthTime?: string, timezone?: string, latitude?: number, longitude?: number, elevation?: number) => Month[];
 export {};
 //# sourceMappingURL=CalendarGenerator.d.ts.map
