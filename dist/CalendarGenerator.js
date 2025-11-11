@@ -299,7 +299,9 @@ function generateCalendarYear(eventList) {
             SolarEnd: dayInfo.SolarEnd.format('YYYY-MM-DD HH:mm:ss'),
             Delta: dayInfo.Delta, // Deviation from 24-hour day
             MoonPhase: dayInfo.MoonPhase, // Current moon phase
-            SolarDegree: getDegree(currentHelioLongitude, springEquinoxLongitude), // Orbital position
+            SolarDegree: getDegree(currentHelioLongitude, springEquinoxLongitude), // Orbital position at solar noon
+            SolarStartLongitude: SolarStartDegree, // Orbital position at solar day start
+            SolarEndLongitude: SolarEndDegree, // Orbital position at solar day end
             Events: events // Any special events
         };
         // DEBUG: Log day creation when there are events

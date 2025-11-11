@@ -108,8 +108,14 @@ interface Day {
     /** Difference from 24-hour day in seconds (+ or -) */
     Delta: string;
 
-    /** Earth's heliocentric longitude relative to Spring Equinox (0-360°) */
+    /** Earth's heliocentric longitude at solar noon relative to Spring Equinox (0-360°) */
     SolarDegree: number;
+
+    /** Earth's heliocentric longitude at solar day start relative to Spring Equinox (0-360°) */
+    SolarStartLongitude: number;
+
+    /** Earth's heliocentric longitude at solar day end relative to Spring Equinox (0-360°) */
+    SolarEndLongitude: number;
 
     /** Astronomical events occurring on this day */
     Events: { name: string; description: string; date: string }[];
@@ -413,7 +419,9 @@ function generateCalendarYear(eventList: Events): void {
             SolarEnd: dayInfo.SolarEnd.format('YYYY-MM-DD HH:mm:ss'),
             Delta: dayInfo.Delta,                                // Deviation from 24-hour day
             MoonPhase: dayInfo.MoonPhase,                        // Current moon phase
-            SolarDegree: getDegree(currentHelioLongitude, springEquinoxLongitude), // Orbital position
+            SolarDegree: getDegree(currentHelioLongitude, springEquinoxLongitude), // Orbital position at solar noon
+            SolarStartLongitude: SolarStartDegree,               // Orbital position at solar day start
+            SolarEndLongitude: SolarEndDegree,                   // Orbital position at solar day end
             Events: events                                       // Any special events
         };
 
