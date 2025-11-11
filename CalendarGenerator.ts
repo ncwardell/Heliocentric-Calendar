@@ -407,7 +407,7 @@ function generateCalendarYear(eventList: Events): void {
         // Create the day object with all calculated information
         const day: Day = {
             Number: newCalendar[monthIndex].Days.length + 1,    // Day number within the month
-            Date: currentDate.toDate(),                          // Gregorian date
+            Date: currentDate.clone().utc().hours(12).minutes(0).seconds(0).milliseconds(0).toDate(), // Gregorian date at noon UTC to avoid timezone shift issues
             SolarStart: dayInfo.SolarStart.format('YYYY-MM-DD HH:mm:ss'),
             SolarNoon: dayInfo.SolarNoon.format('LT'),           // Local time format
             SolarEnd: dayInfo.SolarEnd.format('YYYY-MM-DD HH:mm:ss'),
