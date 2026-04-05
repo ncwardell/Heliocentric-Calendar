@@ -26,16 +26,22 @@ const RADIANS_TO_DEGREES = 180 / Math.PI;
  * This defines the start and end of a "solar day"
  */
 const HOUR_ANGLE_HORIZON = 12;
-/** Moon phase degree boundaries (in degrees, 0-360) */
+/**
+ * Moon phase degree boundaries (in degrees, 0-360).
+ * Each phase is centred on its exact astronomical moment:
+ *   New Moon = 0°, First Quarter = 90°, Full Moon = 180°, Third Quarter = 270°
+ * Boundaries sit halfway between adjacent phase centres (every 45° → ±22.5°).
+ * New Moon wraps through 0°: range is 337.5° → 22.5°.
+ */
 const MOON_PHASE_BOUNDARIES = {
-    NEW_MOON_END: 45,
-    WAXING_CRESCENT_END: 90,
-    FIRST_QUARTER_END: 135,
-    WAXING_GIBBOUS_END: 180,
-    FULL_MOON_END: 225,
-    WANING_GIBBOUS_END: 270,
-    THIRD_QUARTER_END: 315,
-    WANING_CRESCENT_END: 360
+    NEW_MOON_END: 22.5,
+    WAXING_CRESCENT_END: 67.5,
+    FIRST_QUARTER_END: 112.5,
+    WAXING_GIBBOUS_END: 157.5,
+    FULL_MOON_END: 202.5,
+    WANING_GIBBOUS_END: 247.5,
+    THIRD_QUARTER_END: 292.5,
+    WANING_CRESCENT_END: 337.5
 };
 // ============================================================================
 // PERFORMANCE OPTIMIZATION: Heliocentric Longitude Cache
@@ -443,28 +449,29 @@ const getDayInfo = (date) => {
          * - 180° (Full Moon): Earth is between Moon and Sun
          * - 270° (Third Quarter): Moon is 270° ahead of Sun
          */
-        if (Moon >= 0 && Moon < MOON_PHASE_BOUNDARIES.NEW_MOON_END) {
+        // New Moon wraps through 0°: catch both 337.5°→360° and 0°→22.5°
+        if (Moon >= MOON_PHASE_BOUNDARIES.WANING_CRESCENT_END || Moon < MOON_PHASE_BOUNDARIES.NEW_MOON_END) {
             Phase = "New Moon";
         }
-        else if (Moon >= MOON_PHASE_BOUNDARIES.NEW_MOON_END && Moon < MOON_PHASE_BOUNDARIES.WAXING_CRESCENT_END) {
+        else if (Moon < MOON_PHASE_BOUNDARIES.WAXING_CRESCENT_END) {
             Phase = "Waxing Cres.";
         }
-        else if (Moon >= MOON_PHASE_BOUNDARIES.WAXING_CRESCENT_END && Moon < MOON_PHASE_BOUNDARIES.FIRST_QUARTER_END) {
+        else if (Moon < MOON_PHASE_BOUNDARIES.FIRST_QUARTER_END) {
             Phase = "First Quarter";
         }
-        else if (Moon >= MOON_PHASE_BOUNDARIES.FIRST_QUARTER_END && Moon < MOON_PHASE_BOUNDARIES.WAXING_GIBBOUS_END) {
+        else if (Moon < MOON_PHASE_BOUNDARIES.WAXING_GIBBOUS_END) {
             Phase = "Waxing Gibb.";
         }
-        else if (Moon >= MOON_PHASE_BOUNDARIES.WAXING_GIBBOUS_END && Moon < MOON_PHASE_BOUNDARIES.FULL_MOON_END) {
+        else if (Moon < MOON_PHASE_BOUNDARIES.FULL_MOON_END) {
             Phase = "Full Moon";
         }
-        else if (Moon >= MOON_PHASE_BOUNDARIES.FULL_MOON_END && Moon < MOON_PHASE_BOUNDARIES.WANING_GIBBOUS_END) {
+        else if (Moon < MOON_PHASE_BOUNDARIES.WANING_GIBBOUS_END) {
             Phase = "Waning Gibb.";
         }
-        else if (Moon >= MOON_PHASE_BOUNDARIES.WANING_GIBBOUS_END && Moon < MOON_PHASE_BOUNDARIES.THIRD_QUARTER_END) {
+        else if (Moon < MOON_PHASE_BOUNDARIES.THIRD_QUARTER_END) {
             Phase = "Third Quarter";
         }
-        else if (Moon >= MOON_PHASE_BOUNDARIES.THIRD_QUARTER_END && Moon <= MOON_PHASE_BOUNDARIES.WANING_CRESCENT_END) {
+        else {
             Phase = "Waning Cres.";
         }
         /**

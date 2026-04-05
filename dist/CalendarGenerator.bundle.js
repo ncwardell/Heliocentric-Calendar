@@ -8014,14 +8014,14 @@ var MAX_BINARY_SEARCH_ITERATIONS = 100;
 var RADIANS_TO_DEGREES = 180 / Math.PI;
 var HOUR_ANGLE_HORIZON = 12;
 var MOON_PHASE_BOUNDARIES = {
-  NEW_MOON_END: 45,
-  WAXING_CRESCENT_END: 90,
-  FIRST_QUARTER_END: 135,
-  WAXING_GIBBOUS_END: 180,
-  FULL_MOON_END: 225,
-  WANING_GIBBOUS_END: 270,
-  THIRD_QUARTER_END: 315,
-  WANING_CRESCENT_END: 360
+  NEW_MOON_END: 22.5,
+  WAXING_CRESCENT_END: 67.5,
+  FIRST_QUARTER_END: 112.5,
+  WAXING_GIBBOUS_END: 157.5,
+  FULL_MOON_END: 202.5,
+  WANING_GIBBOUS_END: 247.5,
+  THIRD_QUARTER_END: 292.5,
+  WANING_CRESCENT_END: 337.5
 };
 var heliocentricLongitudeCache = /* @__PURE__ */ new Map();
 var Months;
@@ -8234,21 +8234,21 @@ var getDayInfo = (date) => {
     const SolarNoon = (0, import_moment_timezone.default)(SearchHourAngle(Body.Sun, observer, 0, date).time.toString());
     const Moon = MoonPhase(SolarNoon.toDate());
     let Phase = "";
-    if (Moon >= 0 && Moon < MOON_PHASE_BOUNDARIES.NEW_MOON_END) {
+    if (Moon >= MOON_PHASE_BOUNDARIES.WANING_CRESCENT_END || Moon < MOON_PHASE_BOUNDARIES.NEW_MOON_END) {
       Phase = "New Moon";
-    } else if (Moon >= MOON_PHASE_BOUNDARIES.NEW_MOON_END && Moon < MOON_PHASE_BOUNDARIES.WAXING_CRESCENT_END) {
+    } else if (Moon < MOON_PHASE_BOUNDARIES.WAXING_CRESCENT_END) {
       Phase = "Waxing Cres.";
-    } else if (Moon >= MOON_PHASE_BOUNDARIES.WAXING_CRESCENT_END && Moon < MOON_PHASE_BOUNDARIES.FIRST_QUARTER_END) {
+    } else if (Moon < MOON_PHASE_BOUNDARIES.FIRST_QUARTER_END) {
       Phase = "First Quarter";
-    } else if (Moon >= MOON_PHASE_BOUNDARIES.FIRST_QUARTER_END && Moon < MOON_PHASE_BOUNDARIES.WAXING_GIBBOUS_END) {
+    } else if (Moon < MOON_PHASE_BOUNDARIES.WAXING_GIBBOUS_END) {
       Phase = "Waxing Gibb.";
-    } else if (Moon >= MOON_PHASE_BOUNDARIES.WAXING_GIBBOUS_END && Moon < MOON_PHASE_BOUNDARIES.FULL_MOON_END) {
+    } else if (Moon < MOON_PHASE_BOUNDARIES.FULL_MOON_END) {
       Phase = "Full Moon";
-    } else if (Moon >= MOON_PHASE_BOUNDARIES.FULL_MOON_END && Moon < MOON_PHASE_BOUNDARIES.WANING_GIBBOUS_END) {
+    } else if (Moon < MOON_PHASE_BOUNDARIES.WANING_GIBBOUS_END) {
       Phase = "Waning Gibb.";
-    } else if (Moon >= MOON_PHASE_BOUNDARIES.WANING_GIBBOUS_END && Moon < MOON_PHASE_BOUNDARIES.THIRD_QUARTER_END) {
+    } else if (Moon < MOON_PHASE_BOUNDARIES.THIRD_QUARTER_END) {
       Phase = "Third Quarter";
-    } else if (Moon >= MOON_PHASE_BOUNDARIES.THIRD_QUARTER_END && Moon <= MOON_PHASE_BOUNDARIES.WANING_CRESCENT_END) {
+    } else {
       Phase = "Waning Cres.";
     }
     const SolarStart = (0, import_moment_timezone.default)(SearchHourAngle(Body.Sun, observer, HOUR_ANGLE_HORIZON, SolarNoon.toDate(), -1).time.toString()).utc();
